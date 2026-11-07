@@ -1,0 +1,301 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #fff3f6;
+    color: #624e58;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    max-width: 850px;
+    margin: auto;
+    padding: 20px;
+}
+
+.card {
+    background: #fff;
+    padding: 25px;
+    border-radius: 20px;
+    margin: 20px auto;
+    box-shadow: 0 4px 15px rgba(190, 120, 140, .08);
+}
+
+.login-card,
+.profile-card {
+    width: 100%;
+    max-width: 480px;
+}
+
+h1, h2, h3 {
+    color: #c36f91;
+    margin-bottom: 15px;
+}
+
+p {
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+label {
+    display: block;
+    margin: 15px 0 7px;
+    font-weight: bold;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #efd5df;
+    border-radius: 11px;
+    background: #fffafa;
+    color: #624e58;
+    outline: none;
+}
+
+textarea {
+    min-height: 75px;
+    resize: vertical;
+}
+
+button, .upload-button {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 13px;
+    border: none;
+    border-radius: 12px;
+    background: #d982a5;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    transition: .2s;
+}
+
+button:hover, .upload-button:hover {
+    background: #c16d91;
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.secondary {
+    background: #eadce1;
+    color: #765665;
+}
+
+.header {
+    max-width: 810px;
+    margin: 20px auto;
+    padding: 22px;
+    background: white;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.header button {
+    width: auto;
+    margin: 0;
+}
+
+.camera-box {
+    width: 100%;
+    height: 350px;
+    background: #fff0f5;
+    border-radius: 16px;
+    overflow: hidden;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-box video,
+.camera-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: none;
+}
+
+#placeholder {
+    text-align: center;
+    color: #bd8099;
+}
+
+#placeholder span {
+    font-size: 50px;
+}
+
+.button-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.upload-button {
+    background: #eadce1;
+    color: #765665;
+}
+
+#status {
+    text-align: center;
+    color: #bd8099;
+    font-size: 14px;
+    margin-top: 18px;
+}
+
+.result-card {
+    text-align: center;
+}
+
+.calorie-box {
+    background: #fff0f5;
+    padding: 25px;
+    border-radius: 16px;
+    margin: 20px 0;
+}
+
+.calorie-box h1 {
+    font-size: 38px;
+    margin: 10px 0;
+}
+
+.calorie-box small {
+    color: #92717f;
+}
+
+.chart-container {
+    display: flex;
+    justify-content: center;
+    margin: 25px;
+}
+
+.pie-chart {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: #f8dce7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart-center {
+    width: 125px;
+    height: 125px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart-center strong {
+    color: #bd6d91;
+    font-size: 27px;
+}
+
+.chart-center span {
+    font-size: 13px;
+}
+
+.nutrition-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    text-align: left;
+}
+
+.nutrition-list div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nutrition-list strong {
+    margin-left: auto;
+    color: #bd6d91;
+}
+
+.dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.carb {
+    background: #d77fa4;
+}
+
+.protein {
+    background: #efb1c9;
+}
+
+.fat {
+    background: #f8dce7;
+}
+
+.note {
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+    margin-top: 22px;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #bd8099;
+}
+
+@media (max-width: 550px) {
+    .container {
+        padding: 12px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .camera-box {
+        height: 280px;
+    }
+
+    .button-group {
+        grid-template-columns: 1fr;
+    }
+
+    .header {
+        margin: 12px;
+    }
+
+    .pie-chart {
+        width: 190px;
+        height: 190px;
+    }
+}

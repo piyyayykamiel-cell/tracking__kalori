@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodScan - Piyya</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- LOGIN -->
+    <section id="loginPage" class="page">
+        <div class="card login-card">
+            <h1>FoodScan 💗</h1>
+            <p>Selamat datang! Silakan login terlebih dahulu.</p>
+
+            <form id="loginForm">
+                <label>Nama pengguna</label>
+                <input type="text" id="loginName"
+                    placeholder="Masukkan nama" required>
+                <button type="submit">Masuk</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- PROFIL -->
+    <section id="profilePage" class="page" hidden>
+        <div class="card profile-card">
+            <h1>Profil Pengguna 💗</h1>
+            <p>Lengkapi data sebelum melakukan scan makanan.</p>
+
+            <form id="profileForm">
+
+                <label>Nama</label>
+                <input type="text" id="name" required>
+
+                <label>Tinggi badan (cm)</label>
+                <input type="number" id="height" min="1" required>
+
+                <label>Berat badan (kg)</label>
+                <input type="number" id="weight" min="1" step="0.1" required>
+
+                <label>Umur</label>
+                <input type="number" id="age" min="1" max="120" required>
+
+                <label>Riwayat penyakit (opsional)</label>
+                <textarea id="medical" placeholder="Boleh dikosongkan"></textarea>
+
+                <label>Jenis alergi (opsional)</label>
+                <textarea id="allergy" placeholder="Boleh dikosongkan"></textarea>
+
+                <label>Program</label>
+                <select id="program" required>
+                    <option value="">Pilih program</option>
+                    <option value="balanced">Pola makan seimbang</option>
+                    <option value="energy">Menjaga energi</option>
+                    <option value="activity">Mendukung aktivitas harian</option>
+                </select>
+
+                <button type="submit">Simpan Profil</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- HALAMAN SCAN -->
+    <main id="appPage" hidden>
+
+        <header class="header">
+            <div>
+                <h2>Halo, <span id="userDisplay"></span>! 💗</h2>
+                <p>Program: <span id="programDisplay"></span></p>
+            </div>
+            <button id="logoutBtn" class="secondary">Keluar</button>
+        </header>
+
+        <!-- KAMERA -->
+        <section class="card">
+            <h2>📸 Scan Makanan</h2>
+            <p>Arahkan kamera HP ke makanan atau upload foto makanan.</p>
+
+            <div class="camera-box">
+                <video id="camera" autoplay playsinline></video>
+                <img id="preview" alt="Foto makanan">
+
+                <div id="placeholder">
+                    <span>📷</span>
+                    <p>Kamera belum diaktifkan</p>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" id="openCamera">Buka Kamera</button>
+                <button type="button" id="takePhoto">Ambil Foto</button>
+                <button type="button" id="stopCamera" class="secondary">
+                    Matikan Kamera
+                </button>
+            </div>
+
+            <label class="upload-button">
+                📁 Upload Foto Makanan
+                <input type="file" id="uploadImage" accept="image/*" hidden>
+            </label>
+
+            <button type="button" id="analyzeButton" disabled>
+                Scan Makanan
+            </button>
+
+            <p id="status">Menyiapkan sistem pengenalan makanan...</p>
+        </section>
+
+        <!-- HASIL SCAN -->
+        <section class="card result-card" id="resultCard" hidden>
+
+            <h2>📊 Hasil Scan Makanan</h2>
+
+            <h3 id="foodName"></h3>
+
+            <div class="calorie-box">
+                <p>Perkiraan Total Kalori</p>
+                <h1 id="totalCalories">0 kkal</h1>
+                <small>Perkiraan satu porsi</small>
+            </div>
+
+            <h3>Diagram Komposisi Nutrisi</h3>
+
+            <div class="chart-container">
+                <div class="pie-chart" id="pieChart">
+                    <div class="chart-center">
+                        <strong id="chartCalories">0</strong>
+                        <span>kkal</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nutrition-list">
+                <div>
+                    <span class="dot carb"></span>
+                    Karbohidrat
+                    <strong id="carbsValue">0 g</strong>
+                </div>
+
+                <div>
+                    <span class="dot protein"></span>
+                    Protein
+                    <strong id="proteinValue">0 g</strong>
+                </div>
+
+                <div>
+                    <span class="dot fat"></span>
+                    Lemak
+                    <strong id="fatValue">0 g</strong>
+                </div>
+            </div>
+
+            <p class="note">
+                Hasil merupakan perkiraan berdasarkan data nutrisi makanan.
+            </p>
+        </section>
+
+        <footer>
+            © 2026 FoodScan | Piyya 💗
+        </footer>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+    <script src="script.js"></script>
+
+</body>
+</html>
