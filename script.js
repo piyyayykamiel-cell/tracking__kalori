@@ -1,4 +1,3 @@
-
 const loginPage = document.getElementById("loginPage");
 const profilePage = document.getElementById("profilePage");
 const appPage = document.getElementById("appPage");
@@ -14,9 +13,106 @@ const statusText = document.getElementById("status");
 let model = null;
 let stream = null;
 let selectedImage = null;
+let currentObjectURL = null;
+
+// DATABASE PROGRAM
+const programs = {
+    balanced: "Pola makan seimbang",
+    energy: "Menjaga energi",
+    activity: "Mendukung aktivitas harian"
+};
+
+// DATABASE MAKANAN
+const foodDatabase = [
+    {
+        keywords: ["cheeseburger", "hamburger", "beefburger", "burger"],
+        name: "Burger",
+        carbs: 30,
+        protein: 17,
+        fat: 15
+    },
+    {
+        keywords: ["pizza"],
+        name: "Pizza",
+        carbs: 36,
+        protein: 12,
+        fat: 10
+    },
+    {
+        keywords: ["french fries", "potato wedges", "chips"],
+        name: "Kentang Goreng",
+        carbs: 40,
+        protein: 4,
+        fat: 15
+    },
+    {
+        keywords: ["hotdog", "hot dog"],
+        name: "Hot Dog",
+        carbs: 25,
+        protein: 10,
+        fat: 15
+    },
+    {
+        keywords: ["ice cream", "icecream"],
+        name: "Es Krim",
+        carbs: 25,
+        protein: 4,
+        fat: 10
+    },
+    {
+        keywords: ["banana"],
+        name: "Pisang",
+        carbs: 27,
+        protein: 1,
+        fat: 0.3
+    },
+    {
+        keywords: ["broccoli"],
+        name: "Brokoli",
+        carbs: 11,
+        protein: 4,
+        fat: 0.5
+    },
+    {
+        keywords: ["strawberry"],
+        name: "Stroberi",
+        carbs: 12,
+        protein: 1,
+        fat: 0.5
+    },
+    {
+        keywords: ["orange"],
+        name: "Jeruk",
+        carbs: 15,
+        protein: 1,
+        fat: 0.2
+    },
+    {
+        keywords: ["burrito"],
+        name: "Burrito",
+        carbs: 50,
+        protein: 18,
+        fat: 15
+    },
+    {
+        keywords: ["bagel"],
+        name: "Bagel",
+        carbs: 55,
+        protein: 11,
+        fat: 2
+    },
+    {
+        keywords: ["sandwich"],
+        name: "Sandwich",
+        carbs: 35,
+        protein: 15,
+        fat: 12
+    }
+];
 
 // LOGIN
-document.getElementById("loginForm").addEventListener("submit", function(e) {
+document.getElementById("loginForm")
+.addEventListener("submit", function(e) {
     e.preventDefault();
 
     const name = document.getElementById("loginName").value.trim();
@@ -30,21 +126,17 @@ document.getElementById("loginForm").addEventListener("submit", function(e) {
 });
 
 // SIMPAN PROFIL
-document.getElementById("profileForm").addEventListener("submit", function(e) {
+document.getElementById("profileForm")
+.addEventListener("submit", function(e) {
     e.preventDefault();
 
     const name = document.getElementById("name").value.trim();
-
-    const programs = {
-        balanced: "Pola makan seimbang",
-        energy: "Menjaga energi",
-        activity: "Mendukung aktivitas harian"
-    };
+    const selectedProgram = document.getElementById("program").value;
 
     document.getElementById("userDisplay").textContent = name;
 
     document.getElementById("programDisplay").textContent =
-        programs[document.getElementById("program").value];
+        programs[selectedProgram] || "Belum dipilih";
 
     profilePage.hidden = true;
     appPage.hidden = false;
@@ -53,7 +145,8 @@ document.getElementById("profileForm").addEventListener("submit", function(e) {
 });
 
 // LOGOUT
-document.getElementById("logoutBtn").addEventListener("click", function() {
+document.getElementById("logoutBtn")
+.addEventListener("click", function() {
     stopCamera();
 
     appPage.hidden = true;
@@ -63,6 +156,7 @@ document.getElementById("logoutBtn").addEventListener("click", function() {
     document.getElementById("profileForm").reset();
 
     selectedImage = null;
+
     preview.removeAttribute("src");
     resultCard.hidden = true;
     analyzeButton.disabled = true;
@@ -70,36 +164,61 @@ document.getElementById("logoutBtn").addEventListener("click", function() {
     camera.style.display = "none";
     preview.style.display = "none";
     placeholder.style.display = "block";
+
+    uploadImage.value = "";
+
+    if (currentObjectURL) {
+        URL.revokeObjectURL(currentObjectURL);
+        currentObjectURL = null;
+    }
+
+    statusText.textContent =
+        "Menyiapkan sistem pengenalan makanan...";
 });
 
 // MEMUAT AI
 async function loadAI() {
     if (model) return;
 
-    statusText.textContent = "Memuat sistem AI...";
+    statusText.textContent = "Sedang memuat sistem AI...";
 
     try {
-        model = await mobilenet.load();
+        if (typeof mobilenet === "undefined") {
+            throw new Error("Library MobileNet tidak ditemukan.");
+        }
+
+        model = await mobilenet.load({
+            version: 2,
+            alpha: 1.0
+        });
 
         statusText.textContent =
             "AI siap digunakan. Silakan scan makanan.";
 
     } catch (error) {
-        console.error(error);
+        console.error("AI ERROR:", error);
 
         statusText.textContent =
-            "Gagal memuat AI. Periksa koneksi internet.";
+            "AI gagal dimuat. Periksa koneksi internet.";
     }
 }
 
 // BUKA KAMERA
-document.getElementById("openCamera").addEventListener("click", async function() {
+document.getElementById("openCamera")
+.addEventListener("click", async function() {
     try {
         stopCamera();
 
+        if (!navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia) {
+            throw new Error("Browser tidak mendukung kamera.");
+        }
+
         stream = await navigator.mediaDevices.getUserMedia({
             video: {
-                facingMode: "environment"
+                facingMode: {
+                    ideal: "environment"
+                }
             },
             audio: false
         });
@@ -126,9 +245,11 @@ document.getElementById("openCamera").addEventListener("click", async function()
 });
 
 // AMBIL FOTO
-document.getElementById("takePhoto").addEventListener("click", function() {
+document.getElementById("takePhoto")
+.addEventListener("click", function() {
     if (!stream || camera.readyState < 2) {
-        statusText.textContent = "Buka kamera terlebih dahulu.";
+        statusText.textContent =
+            "Buka kamera terlebih dahulu.";
         return;
     }
 
@@ -158,16 +279,19 @@ document.getElementById("takePhoto").addEventListener("click", function() {
     analyzeButton.disabled = false;
     resultCard.hidden = true;
 
-    statusText.textContent = "Foto berhasil diambil. Tekan Scan Makanan.";
+    statusText.textContent =
+        "Foto berhasil diambil. Tekan Scan Makanan.";
 });
 
 // MATIKAN KAMERA
-document.getElementById("stopCamera").addEventListener("click", function() {
+document.getElementById("stopCamera")
+.addEventListener("click", function() {
     stopCamera();
 
     if (selectedImage === camera) {
         selectedImage = null;
         analyzeButton.disabled = true;
+
         placeholder.style.display = "block";
         camera.style.display = "none";
     }
@@ -197,14 +321,18 @@ uploadImage.addEventListener("change", function(e) {
 
     stopCamera();
 
-    const url = URL.createObjectURL(file);
+    if (currentObjectURL) {
+        URL.revokeObjectURL(currentObjectURL);
+    }
+
+    currentObjectURL = URL.createObjectURL(file);
 
     const image = new Image();
 
     image.onload = function() {
         selectedImage = image;
 
-        preview.src = url;
+        preview.src = currentObjectURL;
         preview.style.display = "block";
 
         camera.style.display = "none";
@@ -218,81 +346,39 @@ uploadImage.addEventListener("change", function(e) {
     };
 
     image.onerror = function() {
-        URL.revokeObjectURL(url);
         statusText.textContent = "Foto gagal dibuka.";
     };
 
-    image.src = url;
+    image.src = currentObjectURL;
 });
 
-// DATABASE PERKIRAAN NUTRISI SATU PORSI
-const foodDatabase = [
-    {
-        keywords: ["pizza"],
-        name: "Pizza",
-        carbs: 36, protein: 12, fat: 10
-    },
-    {
-        keywords: ["cheeseburger", "hamburger"],
-        name: "Burger",
-        carbs: 30, protein: 17, fat: 15
-    },
-    {
-        keywords: ["french fries"],
-        name: "Kentang Goreng",
-        carbs: 40, protein: 4, fat: 15
-    },
-    {
-        keywords: ["hotdog"],
-        name: "Hot Dog",
-        carbs: 25, protein: 10, fat: 15
-    },
-    {
-        keywords: ["ice cream"],
-        name: "Es Krim",
-        carbs: 25, protein: 4, fat: 10
-    },
-    {
-        keywords: ["banana"],
-        name: "Pisang",
-        carbs: 27, protein: 1, fat: 0.3
-    },
-    {
-        keywords: ["broccoli"],
-        name: "Brokoli",
-        carbs: 11, protein: 4, fat: 0.5
-    },
-    {
-        keywords: ["strawberry"],
-        name: "Stroberi",
-        carbs: 12, protein: 1, fat: 0.5
-    },
-    {
-        keywords: ["orange"],
-        name: "Jeruk",
-        carbs: 15, protein: 1, fat: 0.2
-    },
-    {
-        keywords: ["burrito"],
-        name: "Burrito",
-        carbs: 50, protein: 18, fat: 15
-    },
-    {
-        keywords: ["bagel"],
-        name: "Bagel",
-        carbs: 55, protein: 11, fat: 2
-    }
-];
+// MENCOCOKKAN HASIL AI
+function findFood(predictions) {
+    for (const prediction of predictions) {
+        const label = prediction.className.toLowerCase();
 
-// TOMBOL SCAN
+        for (const food of foodDatabase) {
+            if (food.keywords.some(keyword =>
+                label.includes(keyword)
+            )) {
+                return food;
+            }
+        }
+    }
+
+    return null;
+}
+
+// TOMBOL SCAN MAKANAN
 analyzeButton.addEventListener("click", async function() {
     if (!selectedImage) {
-        statusText.textContent = "Ambil atau upload foto terlebih dahulu.";
+        statusText.textContent =
+            "Ambil atau upload foto terlebih dahulu.";
         return;
     }
 
     if (!model) {
-        statusText.textContent = "AI sedang dimuat.";
+        statusText.textContent = "AI sedang dimuat...";
 
         await loadAI();
 
@@ -300,40 +386,41 @@ analyzeButton.addEventListener("click", async function() {
     }
 
     analyzeButton.disabled = true;
-    statusText.textContent = "Sedang mengenali makanan...";
+
+    statusText.textContent =
+        "Sedang mengenali makanan...";
 
     try {
-        const predictions = await model.classify(selectedImage, 5);
+        const predictions = await model.classify(
+            selectedImage,
+            20
+        );
 
         console.log("Hasil AI:", predictions);
 
-        let detectedFood = null;
-
-        for (const prediction of predictions) {
-            const label = prediction.className.toLowerCase();
-
-            detectedFood = foodDatabase.find(food =>
-                food.keywords.some(keyword => label.includes(keyword))
-            );
-
-            if (detectedFood) break;
-        }
+        const detectedFood = findFood(predictions);
 
         if (!detectedFood) {
             resultCard.hidden = true;
 
+            const labels = predictions
+                .slice(0, 3)
+                .map(item => item.className)
+                .join(", ");
+
             statusText.textContent =
-                "Makanan belum dikenali. Coba foto yang lebih jelas.";
+                "Makanan belum cocok dengan database. Prediksi AI: " + labels;
 
             return;
         }
 
         showResult(detectedFood);
 
-        statusText.textContent = "Scan berhasil.";
+        statusText.textContent =
+            "Scan berhasil. Hasil merupakan estimasi nutrisi.";
 
     } catch (error) {
-        console.error(error);
+        console.error("SCAN ERROR:", error);
 
         statusText.textContent =
             "Terjadi kesalahan saat scan makanan.";
@@ -343,7 +430,7 @@ analyzeButton.addEventListener("click", async function() {
     }
 });
 
-// HASIL KALORI DAN DIAGRAM
+// MENAMPILKAN HASIL KALORI
 function showResult(food) {
     const carbCalories = food.carbs * 4;
     const proteinCalories = food.protein * 4;
@@ -352,10 +439,14 @@ function showResult(food) {
     const totalCalories =
         carbCalories + proteinCalories + fatCalories;
 
-    const carbPercent = carbCalories / totalCalories * 100;
-    const proteinPercent = proteinCalories / totalCalories * 100;
+    const carbPercent =
+        carbCalories / totalCalories * 100;
 
-    const fatPercent = fatCalories / totalCalories * 100;
+    const proteinPercent =
+        proteinCalories / totalCalories * 100;
+
+    const fatPercent =
+        fatCalories / totalCalories * 100;
 
     document.getElementById("foodName").textContent =
         food.name;
