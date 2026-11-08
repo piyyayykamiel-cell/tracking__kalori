@@ -1,12 +1,33 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>FoodScan - Piyya</title>
+
+    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- PWA MANIFEST -->
+    <link rel="manifest" href="./manifest.json">
+
+    <!-- WARNA APLIKASI -->
+    <meta name="theme-color" content="#7C3AED">
+    <meta name="background-color" content="#F5F3FF">
+
+    <!-- ICON -->
+    <link rel="icon" type="image/png" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+
+    <!-- PWA -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="FoodScan">
+
 </head>
+
 <body>
 
     <!-- LOGIN -->
@@ -164,9 +185,34 @@
 
     </main>
 
+    <!-- TENSORFLOW -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+
+    <!-- JAVASCRIPT UTAMA -->
     <script src="script.js"></script>
+
+    <!-- SERVICE WORKER REGISTRATION -->
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+                navigator.serviceWorker.register("./sw.js")
+                    .then(function (registration) {
+                        console.log(
+                            "Service Worker berhasil:",
+                            registration.scope
+                        );
+                    })
+                    .catch(function (error) {
+                        console.error(
+                            "Service Worker gagal:",
+                            error
+                        );
+                    });
+            });
+        }
+    </script>
 
 </body>
 </html>
