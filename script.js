@@ -1,3 +1,12 @@
+// ==========================================
+// FOODSCAN - PIYYA 💗
+// AI ONLINE FOOD RECOGNITION
+// ==========================================
+
+// GANTI DENGAN URL CLOUDFLARE WORKER KAMU
+const SCAN_API_URL = "https://foodscan-piyya.piyyayykamiel.workers.dev/scan";
+
+// ELEMENT HTML
 const loginPage = document.getElementById("loginPage");
 const profilePage = document.getElementById("profilePage");
 const appPage = document.getElementById("appPage");
@@ -5,15 +14,17 @@ const appPage = document.getElementById("appPage");
 const camera = document.getElementById("camera");
 const preview = document.getElementById("preview");
 const placeholder = document.getElementById("placeholder");
+
 const uploadImage = document.getElementById("uploadImage");
 const analyzeButton = document.getElementById("analyzeButton");
 const resultCard = document.getElementById("resultCard");
 const statusText = document.getElementById("status");
 
-let model = null;
+// STATE
 let stream = null;
 let selectedImage = null;
 let currentObjectURL = null;
+let isScanning = false;
 
 // DATABASE PROGRAM
 const programs = {
@@ -22,100 +33,16 @@ const programs = {
     activity: "Mendukung aktivitas harian"
 };
 
-// DATABASE MAKANAN
-const foodDatabase = [
-    {
-        keywords: ["cheeseburger", "hamburger", "beefburger", "burger"],
-        name: "Burger",
-        carbs: 30,
-        protein: 17,
-        fat: 15
-    },
-    {
-        keywords: ["pizza"],
-        name: "Pizza",
-        carbs: 36,
-        protein: 12,
-        fat: 10
-    },
-    {
-        keywords: ["french fries", "potato wedges", "chips"],
-        name: "Kentang Goreng",
-        carbs: 40,
-        protein: 4,
-        fat: 15
-    },
-    {
-        keywords: ["hotdog", "hot dog"],
-        name: "Hot Dog",
-        carbs: 25,
-        protein: 10,
-        fat: 15
-    },
-    {
-        keywords: ["ice cream", "icecream"],
-        name: "Es Krim",
-        carbs: 25,
-        protein: 4,
-        fat: 10
-    },
-    {
-        keywords: ["banana"],
-        name: "Pisang",
-        carbs: 27,
-        protein: 1,
-        fat: 0.3
-    },
-    {
-        keywords: ["broccoli"],
-        name: "Brokoli",
-        carbs: 11,
-        protein: 4,
-        fat: 0.5
-    },
-    {
-        keywords: ["strawberry"],
-        name: "Stroberi",
-        carbs: 12,
-        protein: 1,
-        fat: 0.5
-    },
-    {
-        keywords: ["orange"],
-        name: "Jeruk",
-        carbs: 15,
-        protein: 1,
-        fat: 0.2
-    },
-    {
-        keywords: ["burrito"],
-        name: "Burrito",
-        carbs: 50,
-        protein: 18,
-        fat: 15
-    },
-    {
-        keywords: ["bagel"],
-        name: "Bagel",
-        carbs: 55,
-        protein: 11,
-        fat: 2
-    },
-    {
-        keywords: ["sandwich"],
-        name: "Sandwich",
-        carbs: 35,
-        protein: 15,
-        fat: 12
-    }
-];
-
+// ==========================================
 // LOGIN
+// ==========================================
+
 document.getElementById("loginForm")
 .addEventListener("submit", function(e) {
     e.preventDefault();
 
-    const name = document.getElementById("loginName").value.trim();
+    const name = document.getElementById("loginName")
+        .value.trim();
 
     if (!name) return;
 
@@ -125,15 +52,22 @@ document.getElementById("loginForm")
     profilePage.hidden = false;
 });
 
+// ==========================================
 // SIMPAN PROFIL
+// ==========================================
+
 document.getElementById("profileForm")
 .addEventListener("submit", function(e) {
     e.preventDefault();
 
-    const name = document.getElementById("name").value.trim();
-    const selectedProgram = document.getElementById("program").value;
+    const name = document.getElementById("name")
+        .value.trim();
 
-    document.getElementById("userDisplay").textContent = name;
+    const selectedProgram =
+        document.getElementById("program").value;
+
+    document.getElementById("userDisplay").textContent =
+        name;
 
     document.getElementById("programDisplay").textContent =
         programs[selectedProgram] || "Belum dipilih";
@@ -141,80 +75,89 @@ document.getElementById("profileForm")
     profilePage.hidden = true;
     appPage.hidden = false;
 
-    loadAI();
+    statusText.textContent =
+        "AI online siap digunakan. Silakan upload foto makanan.";
 });
 
+// ==========================================
 // LOGOUT
+// ==========================================
+
 document.getElementById("logoutBtn")
 .addEventListener("click", function() {
     stopCamera();
 
-    appPage.hidden = true;
     loginPage.hidden = false;
+    profilePage.hidden = true;
+    appPage.hidden = true;
 
     document.getElementById("loginForm").reset();
     document.getElementById("profileForm").reset();
 
     selectedImage = null;
 
-    preview.removeAttribute("src");
-    resultCard.hidden = true;
-    analyzeButton.disabled = true;
+    resetPreview();
+    resetResult();
 
+    uploadImage.value = "";
+
+    statusText.textContent = "Silakan login kembali.";
+});
+
+// ==========================================
+// RESET PREVIEW
+// ==========================================
+
+function resetPreview() {
     camera.style.display = "none";
     preview.style.display = "none";
     placeholder.style.display = "block";
 
-    uploadImage.value = "";
+    preview.removeAttribute("src");
 
     if (currentObjectURL) {
         URL.revokeObjectURL(currentObjectURL);
         currentObjectURL = null;
     }
-
-    statusText.textContent =
-        "Menyiapkan sistem pengenalan makanan...";
-});
-
-// MEMUAT AI
-async function loadAI() {
-    if (model) return;
-
-    statusText.textContent = "Sedang memuat sistem AI...";
-
-    try {
-        if (typeof mobilenet === "undefined") {
-            throw new Error("Library MobileNet tidak ditemukan.");
-        }
-
-        model = await mobilenet.load({
-            version: 2,
-            alpha: 1.0
-        });
-
-        statusText.textContent =
-            "AI siap digunakan. Silakan scan makanan.";
-
-    } catch (error) {
-        console.error("AI ERROR:", error);
-
-        statusText.textContent =
-            "AI gagal dimuat. Periksa koneksi internet.";
-    }
 }
 
-// BUKA KAMERA
+// ==========================================
+// RESET HASIL
+// ==========================================
+
+function resetResult() {
+    resultCard.hidden = true;
+
+    document.getElementById("foodName").textContent = "";
+    document.getElementById("totalCalories").textContent = "0 kkal";
+    document.getElementById("chartCalories").textContent = "0";
+
+    document.getElementById("carbsValue").textContent = "0 gram";
+    document.getElementById("proteinValue").textContent = "0 gram";
+    document.getElementById("fatValue").textContent = "0 gram";
+
+    document.getElementById("pieChart").style.background =
+        "#f8dce7";
+}
+
+// ==========================================
+// KAMERA
+// ==========================================
+
 document.getElementById("openCamera")
 .addEventListener("click", async function() {
+
     try {
         stopCamera();
 
-        if (!navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia) {
+        const mediaDevices = navigator.mediaDevices;
+
+        if (!mediaDevices ||
+            !mediaDevices.getUserMedia) {
             throw new Error("Browser tidak mendukung kamera.");
         }
 
-        stream = await navigator.mediaDevices.getUserMedia({
+        stream = await mediaDevices.getUserMedia({
             video: {
                 facingMode: {
                     ideal: "environment"
@@ -224,6 +167,7 @@ document.getElementById("openCamera")
         });
 
         camera.srcObject = stream;
+
         await camera.play();
 
         camera.style.display = "block";
@@ -231,8 +175,10 @@ document.getElementById("openCamera")
         placeholder.style.display = "none";
 
         selectedImage = camera;
+
+        resetResult();
+
         analyzeButton.disabled = false;
-        resultCard.hidden = true;
 
         statusText.textContent = "Kamera aktif.";
 
@@ -240,13 +186,17 @@ document.getElementById("openCamera")
         console.error(error);
 
         statusText.textContent =
-            "Kamera gagal dibuka. Izinkan akses kamera HP.";
+            "Kamera gagal dibuka. Periksa izin kamera HP.";
     }
 });
 
+// ==========================================
 // AMBIL FOTO
+// ==========================================
+
 document.getElementById("takePhoto")
 .addEventListener("click", function() {
+
     if (!stream || camera.readyState < 2) {
         statusText.textContent =
             "Buka kamera terlebih dahulu.";
@@ -276,46 +226,69 @@ document.getElementById("takePhoto")
 
     stopCamera();
 
+    resetResult();
+
     analyzeButton.disabled = false;
-    resultCard.hidden = true;
 
     statusText.textContent =
         "Foto berhasil diambil. Tekan Scan Makanan.";
 });
 
+// ==========================================
 // MATIKAN KAMERA
+// ==========================================
+
 document.getElementById("stopCamera")
 .addEventListener("click", function() {
+
     stopCamera();
 
     if (selectedImage === camera) {
         selectedImage = null;
+
         analyzeButton.disabled = true;
 
-        placeholder.style.display = "block";
         camera.style.display = "none";
+        placeholder.style.display = "block";
     }
 
     statusText.textContent = "Kamera dimatikan.";
 });
 
 function stopCamera() {
+
     if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach(track => {
+            track.stop();
+        });
+
         stream = null;
     }
 
     camera.srcObject = null;
 }
 
+// ==========================================
 // UPLOAD FOTO
+// ==========================================
+
 uploadImage.addEventListener("change", function(e) {
+
     const file = e.target.files[0];
 
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-        statusText.textContent = "File harus berupa gambar.";
+        statusText.textContent =
+            "File harus berupa gambar.";
+
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        statusText.textContent =
+            "Ukuran foto maksimal 10 MB.";
+
         return;
     }
 
@@ -330,133 +303,259 @@ uploadImage.addEventListener("change", function(e) {
     const image = new Image();
 
     image.onload = function() {
+
         selectedImage = image;
 
         preview.src = currentObjectURL;
-        preview.style.display = "block";
 
+        preview.style.display = "block";
         camera.style.display = "none";
         placeholder.style.display = "none";
 
+        resetResult();
+
         analyzeButton.disabled = false;
-        resultCard.hidden = true;
 
         statusText.textContent =
-            "Foto berhasil diupload. Tekan Scan Makanan.";
+            "Foto berhasil diupload. Siap untuk scan.";
     };
 
     image.onerror = function() {
-        statusText.textContent = "Foto gagal dibuka.";
+        statusText.textContent =
+            "Foto gagal dibuka.";
     };
 
     image.src = currentObjectURL;
 });
 
-// MENCOCOKKAN HASIL AI
-function findFood(predictions) {
-    for (const prediction of predictions) {
-        const label = prediction.className.toLowerCase();
+// ==========================================
+// KONVERSI FOTO KE BASE64
+// ==========================================
 
-        for (const food of foodDatabase) {
-            if (food.keywords.some(keyword =>
-                label.includes(keyword)
-            )) {
-                return food;
+function imageToBase64(image) {
+
+    return new Promise((resolve, reject) => {
+
+        try {
+            const canvas = document.createElement("canvas");
+
+            const maxSize = 1024;
+
+            let width = image.videoWidth ||
+                        image.naturalWidth ||
+                        image.width;
+
+            let height = image.videoHeight ||
+                         image.naturalHeight ||
+                         image.height;
+
+            if (!width || !height) {
+                throw new Error("Ukuran foto tidak valid.");
             }
-        }
-    }
 
-    return null;
+            const scale = Math.min(
+                1,
+                maxSize / Math.max(width, height)
+            );
+
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext("2d");
+
+            context.drawImage(
+                image,
+                0,
+                0,
+                width,
+                height
+            );
+
+            const dataURL = canvas.toDataURL(
+                "image/jpeg",
+                0.85
+            );
+
+            resolve(dataURL.split(",")[1]);
+
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
 
-// TOMBOL SCAN MAKANAN
+// ==========================================
+// VALIDASI HASIL AI
+// ==========================================
+
+function validateFood(data) {
+
+    if (!data || typeof data !== "object") {
+        throw new Error("Format hasil AI tidak valid.");
+    }
+
+    const name = data.food_name;
+
+    const carbs = Number(data.carbs_g);
+    const protein = Number(data.protein_g);
+    const fat = Number(data.fat_g);
+
+    if (
+        typeof name !== "string" ||
+        !name.trim() ||
+        name.length > 80 ||
+        !Number.isFinite(carbs) ||
+        !Number.isFinite(protein) ||
+        !Number.isFinite(fat) ||
+        carbs < 0 ||
+        protein < 0 ||
+        fat < 0 ||
+        carbs > 500 ||
+        protein > 500 ||
+        fat > 500
+    ) {
+        throw new Error("Data nutrisi dari AI tidak valid.");
+    }
+
+    return {
+        name: name.trim(),
+        carbs,
+        protein,
+        fat
+    };
+}
+
+// ==========================================
+// SCAN MAKANAN DENGAN AI ONLINE
+// ==========================================
+
 analyzeButton.addEventListener("click", async function() {
+
+    if (isScanning) return;
+
     if (!selectedImage) {
         statusText.textContent =
             "Ambil atau upload foto terlebih dahulu.";
+
         return;
     }
 
-    if (!model) {
-        statusText.textContent = "AI sedang dimuat...";
+    if (SCAN_API_URL.includes("URL-WORKER-KAMU")) {
+        statusText.textContent =
+            "URL AI belum dipasang. Konfigurasikan backend terlebih dahulu.";
 
-        await loadAI();
-
-        if (!model) return;
+        return;
     }
 
+    isScanning = true;
     analyzeButton.disabled = true;
 
+    resetResult();
+
     statusText.textContent =
-        "Sedang mengenali makanan...";
+        "Sedang mengirim foto ke AI online...";
 
     try {
-        const predictions = await model.classify(
-            selectedImage,
-            20
-        );
 
-        console.log("Hasil AI:", predictions);
+        // KONVERSI GAMBAR
+        const base64 = await imageToBase64(selectedImage);
 
-        const detectedFood = findFood(predictions);
+        statusText.textContent =
+            "AI sedang mengenali makanan...";
 
-        if (!detectedFood) {
-            resultCard.hidden = true;
+        // KIRIM FOTO KE BACKEND
+        const response = await fetch(SCAN_API_URL, {
 
-            const labels = predictions
-                .slice(0, 3)
-                .map(item => item.className)
-                .join(", ");
+            method: "POST",
 
-            statusText.textContent =
-                "Makanan belum cocok dengan database. Prediksi AI: " + labels;
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-            return;
+            body: JSON.stringify({
+                image: base64,
+                mimeType: "image/jpeg"
+            })
+
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                "Server AI mengalami masalah. Kode: " +
+                response.status
+            );
         }
 
-        showResult(detectedFood);
+        const result = await response.json();
+
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        // VALIDASI HASIL
+        const food = validateFood(result);
+
+        // TAMPILKAN HASIL
+        showResult(food);
 
         statusText.textContent =
-            "Scan berhasil. Hasil merupakan estimasi nutrisi.";
+            "Scan berhasil! Nutrisi merupakan perkiraan AI.";
 
     } catch (error) {
-        console.error("SCAN ERROR:", error);
+
+        console.error("AI SCAN ERROR:", error);
+
+        resultCard.hidden = true;
 
         statusText.textContent =
-            "Terjadi kesalahan saat scan makanan.";
+            "Scan gagal: " + error.message;
 
     } finally {
-        analyzeButton.disabled = false;
+
+        isScanning = false;
+        analyzeButton.disabled = !selectedImage;
     }
 });
 
-// MENAMPILKAN HASIL KALORI
+// ==========================================
+// MENAMPILKAN HASIL NUTRISI
+// ==========================================
+
 function showResult(food) {
+
     const carbCalories = food.carbs * 4;
     const proteinCalories = food.protein * 4;
     const fatCalories = food.fat * 9;
 
     const totalCalories =
-        carbCalories + proteinCalories + fatCalories;
+        carbCalories +
+        proteinCalories +
+        fatCalories;
 
     const carbPercent =
-        carbCalories / totalCalories * 100;
+        totalCalories ? carbCalories / totalCalories * 100 : 0;
 
     const proteinPercent =
-        proteinCalories / totalCalories * 100;
+        totalCalories ? proteinCalories / totalCalories * 100 : 0;
 
     const fatPercent =
-        fatCalories / totalCalories * 100;
+        totalCalories ? fatCalories / totalCalories * 100 : 0;
 
+    // NAMA MAKANAN
     document.getElementById("foodName").textContent =
         food.name;
 
+    // TOTAL KALORI
     document.getElementById("totalCalories").textContent =
         Math.round(totalCalories) + " kkal";
 
     document.getElementById("chartCalories").textContent =
         Math.round(totalCalories);
 
+    // NUTRISI
     document.getElementById("carbsValue").textContent =
         food.carbs + " gram";
 
@@ -466,6 +565,7 @@ function showResult(food) {
     document.getElementById("fatValue").textContent =
         food.fat + " gram";
 
+    // DIAGRAM
     document.getElementById("pieChart").style.background =
         `conic-gradient(
             #d77fa4 0% ${carbPercent}%,
@@ -473,6 +573,7 @@ function showResult(food) {
             #f8dce7 ${carbPercent + proteinPercent}% 100%
         )`;
 
+    // TAMPILKAN HASIL
     resultCard.hidden = false;
 
     resultCard.scrollIntoView({
@@ -480,3 +581,7 @@ function showResult(food) {
         block: "start"
     });
 }
+
+// ==========================================
+// SELESAI
+// ==========================================
